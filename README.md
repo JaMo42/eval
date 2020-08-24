@@ -18,4 +18,4 @@ Returns the result of `expr`.
 
 ## Requirements
 
-- https://github.com/JaMo42/vector.h
+- https://github.com/JaMo42/c-vector
