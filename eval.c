@@ -54,14 +54,14 @@ eval_internal(const char *expr) {
   double *numbers = vector_create(double, 3);
   char *operators = vector_create(char, 2);
   double ret = 0.0;
-  
+
   int depth = 1;
   int prev = 1;
   char ch, *end;
   for (const char *p = expr; *p && depth > 0; ++p) {
   repeat:
     ch = *p;
-    
+
     if (isspace(ch)) {
     }
     else if (isdigit(ch) || ch == '.' || (ch == '-' && prev)) {
@@ -103,7 +103,7 @@ eval_internal(const char *expr) {
       goto end;
     }
   }
-  
+
   while (vector_size(operators) > 0)
     eval_execute(numbers, operators);
   ret = numbers[0];
