@@ -29,7 +29,7 @@ const EvalValues values[] = {
 };
 ```
 
-- `EvalConst` Creates a constant values
+- `EvalConst` Creates a constant value
 - `EvalVar` Uses the value of the pointed to variable
 - `EvalEnd` Terminates the array
 
