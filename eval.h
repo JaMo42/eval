@@ -22,12 +22,29 @@ SOFTWARE.
 #ifndef EVAL_H
 #define EVAL_H
 
+enum EvalValueType { EVAL_VAR, EVAL_CONST };
+
+typedef struct {
+  const char *name;
+  union {
+    double *variable;
+    double constant;
+  };
+  enum EvalValueType type;
+} EvalValue;
+
+#define EvalVar(n, v) { .name = n, .variable = v, .type = EVAL_VAR }
+#define EvalConst(n, c) { .name = n, .constant = c, .type = EVAL_CONST }
+#define EvalEnd { .name = NULL, .variable = NULL, .type = 0 }
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 double
 eval(const char *expression);
+
+double veval(const char *expression, const EvalValue *values);
 
 #ifdef __cplusplus
 }

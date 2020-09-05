@@ -50,7 +50,7 @@ eval_execute(double *numbers, char *operators) {
 }
 
 static double
-eval_internal(const char *expr) {
+eval_internal(const char *expr, const EvalValue *values) {
   double *numbers = vector_create(double, 3);
   char *operators = vector_create(char, 2);
   double ret = 0.0;
@@ -69,6 +69,25 @@ eval_internal(const char *expr) {
       p = end - 1;
       prev = 0;
     }
+    else if ((isalpha(ch) || ch == '_') && values) {
+      const char *begin = p;
+      while (isalnum(*p) || *p == '_') {
+        ++p;
+      }
+      const EvalValue *v;
+      for (v = values; v->name; ++v) {
+        if (!strncmp(v->name, begin, p - begin)) {
+          vector_push(numbers, v->type ? v->constant : *(v->variable));
+          prev = 0;
+          break;
+        }
+      }
+      if (!v->name) {
+        fprintf(stderr, "veval: value does not exist `%.*s'\n", (int)(p - begin), begin);
+        goto end;
+      }
+      --p;
+    }
     else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
       if (vector_size(operators) == 0) {
         vector_push(operators, ch);
@@ -84,7 +103,7 @@ eval_internal(const char *expr) {
       }
     }
     else if (ch == '(') {
-      vector_push(numbers, eval_internal(p+1));
+      vector_push(numbers, eval_internal(p+1, values));
       // Skip to end of this parenthesis
       int ldepth = 1;
       while (ldepth > 0) {
@@ -116,6 +135,30 @@ end:
 
 double
 eval(const char *expr) {
-  return eval_internal(expr);
+  return eval_internal(expr, NULL);
+}
+
+double
+veval(const char *expr, const EvalValue *values) {
+  // Validate value names
+  int err = 0;
+  for (const EvalValue *v = values; v->name != NULL; ++v) {
+    if (!(isalpha(v->name[0]) || v->name[0] == '-')) {
+      goto error;
+    }
+    for (const char *p = v->name+1; *p; ++p) {
+      if (!(isalnum(*p) || *p == '_')) {
+        goto error;
+      }
+    }
+    continue;
+error:
+    fprintf(stderr, "veval: invalid name `%s'\n", v->name);
+    err = 1;
+  }
+  if (err) {
+    return 0.0;
+  }
+  return eval_internal(expr, values);
 }
 
