@@ -44,7 +44,8 @@ typedef struct {
 double
 eval(const char *expression);
 
-double veval(const char *expression, const EvalValue *values);
+double
+veval(const char *expression, const EvalValue *values);
 
 #ifdef __cplusplus
 }
