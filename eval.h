@@ -22,6 +22,10 @@ SOFTWARE.
 #ifndef EVAL_H
 #define EVAL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum EvalValueType { EVAL_VAR, EVAL_CONST };
 
 typedef struct {
@@ -35,11 +39,7 @@ typedef struct {
 
 #define EvalVar(n, v) { .name = n, .variable = v, .type = EVAL_VAR }
 #define EvalConst(n, c) { .name = n, .constant = c, .type = EVAL_CONST }
-#define EvalEnd { .name = NULL, .variable = NULL, .type = 0 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define EvalEnd { .name = NULL, .variable = NULL, .type = EVAL_VAR }
 
 double
 eval(const char *expression);
