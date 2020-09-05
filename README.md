@@ -10,7 +10,7 @@ double eval(const char *expr);
 
 Returns the result of `expr`.
 
-```
+```cpp
 double veval(const char *expr, const EvalValues *values);
 ```
 
