@@ -33,8 +33,6 @@ const EvalValues values[] = {
 - `EvalVar` Uses the value of the pointed to variable
 - `EvalEnd` Terminates the array
 
-```
-
 ## Features
 
 - Operators: `+`, `-`, `*` and `/`
