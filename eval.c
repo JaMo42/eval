@@ -83,7 +83,7 @@ eval_internal(const char *expr, const EvalValue *values) {
         }
       }
       if (!v->name) {
-        fprintf(stderr, "veval: value does not exist `%.*s'\n", (int)(p - begin), begin);
+        fprintf(stderr, "eval_v: value does not exist `%.*s'\n", (int)(p - begin), begin);
         goto end;
       }
       --p;
@@ -138,13 +138,13 @@ eval(const char *expr) {
   return eval_internal(expr, NULL);
 }
 
-double
-veval(const char *expr, const EvalValue *values) {
-  // Validate value names
+static int
+eval_check_values(const char *caller, const EvalValue *values) {
   int err = 0;
   for (const EvalValue *v = values; v->name != NULL; ++v) {
     if (!(isalpha(v->name[0]) || v->name[0] == '-')) {
       goto error;
+    } else {
     }
     for (const char *p = v->name+1; *p; ++p) {
       if (!(isalnum(*p) || *p == '_')) {
@@ -153,12 +153,63 @@ veval(const char *expr, const EvalValue *values) {
     }
     continue;
 error:
-    fprintf(stderr, "veval: invalid name `%s'\n", v->name);
+    fprintf(stderr, "%s: invalid name `%s'\n", caller, v->name);
     err = 1;
   }
-  if (err) {
+  return err;
+}
+
+double
+eval_v(const char *expr, const EvalValue *values) {
+  if (eval_check_values("eval_v", values)) {
     return 0.0;
   }
   return eval_internal(expr, values);
+}
+
+void
+eval_assign(const char *expr, const EvalValue *values) {
+  if (eval_check_values("eval_assign", values)) {
+    return;
+  }
+  const char *name;
+  const EvalValue *target = NULL;
+  const char *eq_pos = strchr(expr, '=');
+  if (eq_pos == NULL) {
+    fprintf(stderr, "eval_assign: no assignment\n");
+    return;
+  }
+
+  for (const char *p = expr; p < eq_pos; ++p) {
+    if (isspace(*p)) {
+    }
+    else if (isalpha(*p) || *p == '_') {
+      if (target != NULL) {
+        fprintf(stderr, "eval_assign: multiple target values\n");
+        return;
+      }
+      name = p;
+      while (isalnum(*p) || *p == '_') {
+        ++p;
+      }
+      for (target = values; target->name; ++target) {
+        if (!strncmp(target->name, name, p - name)) {
+          break;
+        }
+      }
+      if (!target->name) {
+        fprintf(stderr, "eval_assign: target value does not exist `%.*s'\n", (int)(p - name), name);
+        return;
+      } else if (target->type == EVAL_CONST) {
+        fprintf(stderr, "eval_assign: target value is a constant `%.*s'\n", (int)(p - name), name);
+        return;
+      }
+    }
+    else {
+      fprintf(stderr, "eval_assign: unexpected character in expression -- %c (%d)\n", *p, (int)(p - expr));
+      return;
+    }
+  }
+  *target->variable = eval_internal(eq_pos + 1, values);
 }
 

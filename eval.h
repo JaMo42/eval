@@ -41,11 +41,24 @@ typedef struct {
 #define EvalConst(n, c) { .name = n, .constant = c, .type = EVAL_CONST }
 #define EvalEnd { .name = NULL, .variable = NULL, .type = EVAL_VAR }
 
+/**
+ * @brief Parses simple arithmetic expression.
+ */
 double
 eval(const char *expression);
 
+/**
+ * @brief Parses arithmetic expression with constants and varaibles.
+ */
 double
-veval(const char *expression, const EvalValue *values);
+eval_v(const char *expression, const EvalValue *values);
+
+/**
+ * @brief Parses arithmetic expression with assignment.
+ * Expected format: "val = expr" (whitespace does not matter).
+ */
+void
+eval_assign(const char *assignment, const EvalValue *values);
 
 #ifdef __cplusplus
 }

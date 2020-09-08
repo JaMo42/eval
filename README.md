@@ -11,10 +11,18 @@ double eval(const char *expr);
 Returns the result of `expr`.
 
 ```cpp
-double veval(const char *expr, const EvalValues *values);
+double eval_v(const char *expr, const EvalValues *values);
 ```
 
-Returns the result of `expr` with constants/variables from `values`.
+Returns the result of `expr`, with constants/variables from `values`.
+
+```cpp
+void eval_assign(const char *expression, const EvalValue *values);
+```
+
+Performs assignment to a variable from `values`.
+
+Format of `expression`: `val = expr` (whitespace does not matter), where `val` recieves the result of evaluating `expr`.
 
 ### The `values` array
 
@@ -39,6 +47,7 @@ const EvalValues values[] = {
 - Operator precedences
 - Parentheses
 - Variables and constants
+- Assignment expressions
 
 ## Requirements
 
