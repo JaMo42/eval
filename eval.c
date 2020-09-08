@@ -167,17 +167,17 @@ eval_v(const char *expr, const EvalValue *values) {
   return eval_internal(expr, values);
 }
 
-void
+int
 eval_assign(const char *expr, const EvalValue *values) {
   if (eval_check_values("eval_assign", values)) {
-    return;
+    return 0;
   }
   const char *name;
   const EvalValue *target = NULL;
   const char *eq_pos = strchr(expr, '=');
   if (eq_pos == NULL) {
     fprintf(stderr, "eval_assign: no assignment\n");
-    return;
+    return 0;
   }
 
   for (const char *p = expr; p < eq_pos; ++p) {
@@ -186,7 +186,7 @@ eval_assign(const char *expr, const EvalValue *values) {
     else if (isalpha(*p) || *p == '_') {
       if (target != NULL) {
         fprintf(stderr, "eval_assign: multiple target values\n");
-        return;
+        return 0;
       }
       name = p;
       while (isalnum(*p) || *p == '_') {
@@ -199,17 +199,18 @@ eval_assign(const char *expr, const EvalValue *values) {
       }
       if (!target->name) {
         fprintf(stderr, "eval_assign: target value does not exist `%.*s'\n", (int)(p - name), name);
-        return;
+        return 0;
       } else if (target->type == EVAL_CONST) {
         fprintf(stderr, "eval_assign: target value is a constant `%.*s'\n", (int)(p - name), name);
-        return;
+        return 0;
       }
     }
     else {
       fprintf(stderr, "eval_assign: unexpected character in expression -- %c (%d)\n", *p, (int)(p - expr));
-      return;
+      return 0;
     }
   }
   *target->variable = eval_internal(eq_pos + 1, values);
+  return 1;
 }
 

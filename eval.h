@@ -57,7 +57,7 @@ eval_v(const char *expression, const EvalValue *values);
  * @brief Parses arithmetic expression with assignment.
  * Expected format: "val = expr" (whitespace does not matter).
  */
-void
+int
 eval_assign(const char *assignment, const EvalValue *values);
 
 #ifdef __cplusplus
