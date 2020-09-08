@@ -17,7 +17,7 @@ double eval_v(const char *expr, const EvalValues *values);
 Returns the result of `expr`, with constants/variables from `values`.
 
 ```cpp
-void eval_assign(const char *expression, const EvalValue *values);
+int eval_assign(const char *expression, const EvalValue *values);
 ```
 
 Performs assignment to a variable from `values`.
