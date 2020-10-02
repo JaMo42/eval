@@ -48,7 +48,14 @@ const EvalValues values[] = {
 - Parentheses
 - Variables and constants
 - Assignment expressions
+- Implicit multiplication with parentheses
+
+## Operator precedence disambiguation
+
+By default an expression like `48 / 2(9 + 3)` is disambiguated to `48 / (2 * (9 + 3))`.
+When compiling with `-DEVAL_DISAMBIG_ALT`, it gets changed to `(48 / 2) * (9 + 3)`.
 
 ## Requirements
 
 - https://github.com/JaMo42/c-vector
+

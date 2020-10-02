@@ -51,8 +51,8 @@ eval_execute(double *numbers, char *operators) {
 
 static double
 eval_internal(const char *expr, const EvalValue *values) {
-  double *numbers = vector_create(double, 3);
-  char *operators = vector_create(char, 2);
+  double *numbers = vector_create(double, 4);
+  char *operators = vector_create(char, 3);
   double ret = 0.0;
 
   int prev = 1;  // Previous token was an operator
@@ -102,6 +102,19 @@ eval_internal(const char *expr, const EvalValue *values) {
       }
     }
     else if (ch == '(') {
+      // How to disambiguate something like "48/2(9+3)"
+#ifndef EVAL_DISAMBIG_ALT
+      // "48/(2 * (9+3))"
+      if (!prev)
+        vector_push(operators, '*');
+#else
+      // "(48/2)(9+3)"
+      if (!prev) {
+        if(vector__size(numbers) > 1 && vector__size(operators) > 0)
+          eval_execute(numbers, operators);
+        vector_push(operators, '*');
+      }
+#endif
       vector_push(numbers, eval_internal(p+1, values));
       // Skip to end of this parenthesis
       int depth = 1;
