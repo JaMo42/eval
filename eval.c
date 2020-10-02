@@ -55,10 +55,9 @@ eval_internal(const char *expr, const EvalValue *values) {
   char *operators = vector_create(char, 2);
   double ret = 0.0;
 
-  int depth = 1;
-  int prev = 1;
+  int prev = 1;  // Previous token was an operator
   char ch, *end;
-  for (const char *p = expr; *p && depth > 0; ++p) {
+  for (const char *p = expr; *p; ++p) {
   repeat:
     ch = *p;
 
@@ -105,16 +104,16 @@ eval_internal(const char *expr, const EvalValue *values) {
     else if (ch == '(') {
       vector_push(numbers, eval_internal(p+1, values));
       // Skip to end of this parenthesis
-      int ldepth = 1;
-      while (ldepth > 0) {
+      int depth = 1;
+      while (depth > 0) {
         ++p;
-        if (*p == '(') { ++ldepth; }
-        else if (*p == ')') { --ldepth; }
+        if (*p == '(') { ++depth; }
+        else if (*p == ')') { --depth; }
       }
       prev = 0;
     }
     else if (ch == ')') {
-      --depth;
+      break;
     }
     else {
       fprintf(stderr, "eval: invalid character in expression -- %c (%d)\n",

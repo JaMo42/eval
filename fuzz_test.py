@@ -22,9 +22,9 @@ def generate_expression():
     if random.random() < p_paren:
       expr.append('(')
       n_parens += 1
-    
+
     expr.append(generate_number())
-    
+
     if random.random() < (p_paren * n_parens):
       expr.append(')')
       n_parens -= 1
@@ -32,10 +32,10 @@ def generate_expression():
     expr.append(OPERATORS[random.randrange(4)])
 
   expr.pop()
-  
+
   for i in range(n_parens):
     expr.append(')')
-  
+
   return ''.join(expr)
 
 if __name__ == "__main__":
