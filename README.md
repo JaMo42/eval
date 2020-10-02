@@ -52,7 +52,7 @@ const EvalValues values[] = {
 
 ## Operator precedence disambiguation
 
-By default an expression like `48 / 2(9 + 3)` is disambiguated to `48 / (2 * (9 + 3))`.
+By default an expression like `48 / 2(9 + 3)` is interpreted as `48 / (2 * (9 + 3))`.
 When compiling with `-DEVAL_DISAMBIG_ALT`, it gets changed to `(48 / 2) * (9 + 3)`.
 
 ## Requirements
