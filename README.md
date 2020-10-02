@@ -29,7 +29,7 @@ Format of `expression`: `val = expr` (whitespace does not matter), where `val` r
 Example:
 
 ```cpp
-const EvalValues values[] = {
+const EvalValue values[] = {
   EvalConst("pi", 3.14159),
   EvalConst("e", 2.71828),
   EvalVar("argc", &argc),
