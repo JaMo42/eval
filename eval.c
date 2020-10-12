@@ -92,7 +92,7 @@ eval_internal(const char *expr, const EvalValue *values) {
         vector_push(operators, ch);
         prev = 1;
       }
-      else if (precedence(ch) > precedence(*vector_back(operators))) {
+      else if (precedence(ch) > precedence(vector_back(operators))) {
         vector_push(operators, ch);
         prev = 1;
       }
