@@ -20,8 +20,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 #include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "eval.h"
-#include "vector.h"
+
+struct stack {
+    union stack_item {
+        char op;
+        double number;
+    } values[4];
+    int size;
+};
+
+static inline union stack_item
+stk_top(struct stack *stk) {
+  return stk->values[stk->size - 1];
+}
+
+static inline void
+stk_push_num(struct stack *stk, double number) {
+  stk->values[stk->size++].number = number;
+}
+
+static inline void
+stk_push_op(struct stack *stk, char ch) {
+  stk->values[stk->size++].op = ch;
+}
+
+static inline union stack_item
+stk_pop(struct stack *stk) {
+    return stk->values[--stk->size];
+}
+
+static inline int
+stk_size(struct stack *stk) {
+    return stk->size;
+}
 
 static int
 precedence(char op) {
@@ -37,25 +72,26 @@ precedence(char op) {
 }
 
 static void
-eval_execute(double *numbers, char *operators) {
-  double n2 = vector_pop(numbers);
-  double n1 = vector_pop(numbers);
-  char op = vector_pop(operators);
+eval_execute(struct stack *numbers, struct stack *operators) {
+  double n2 = stk_pop(numbers).number;
+  double n1 = stk_pop(numbers).number;
+  char op = stk_pop(operators).op;
   switch (op) {
-  case '+': vector_push(numbers, n1 + n2); break;
-  case '-': vector_push(numbers, n1 - n2); break;
-  case '*': vector_push(numbers, n1 * n2); break;
-  case '/': vector_push(numbers, n1 / n2); break;
+  case '+': stk_push_num(numbers, n1 + n2); break;
+  case '-': stk_push_num(numbers, n1 - n2); break;
+  case '*': stk_push_num(numbers, n1 * n2); break;
+  case '/': stk_push_num(numbers, n1 / n2); break;
   }
 }
 
 static double
 eval_internal(const char *expr, const EvalValue *values) {
-  double *numbers = vector_create(double, 4);
-  char *operators = vector_create(char, 3);
+  struct stack numbers;
+  struct stack operators;
+  numbers.size = operators.size = 0;
   double ret = 0.0;
 
-  int prev = 1;  // Previous token was an operator
+  int previous_token_was_operator = 1;
   char ch, *end;
   for (const char *p = expr; *p; ++p) {
   repeat:
@@ -63,10 +99,11 @@ eval_internal(const char *expr, const EvalValue *values) {
 
     if (isspace(ch)) {
     }
-    else if (isdigit(ch) || ch == '.' || (ch == '-' && prev)) {
-      vector_push(numbers, strtod(p, &end));
+    else if (isdigit(ch) || ch == '.'
+             || (ch == '-' && previous_token_was_operator)) {
+      stk_push_num(&numbers, strtod(p, &end));
       p = end - 1;
-      prev = 0;
+      previous_token_was_operator = 0;
     }
     else if ((isalpha(ch) || ch == '_') && values) {
       const char *begin = p;
@@ -76,28 +113,33 @@ eval_internal(const char *expr, const EvalValue *values) {
       const EvalValue *v;
       for (v = values; v->name; ++v) {
         if (!strncmp(v->name, begin, p - begin)) {
-          vector_push(numbers, v->type ? v->constant : *(v->variable));
-          prev = 0;
+          stk_push_num(&numbers, v->type ? v->constant : *(v->variable));
+          previous_token_was_operator = 0;
           break;
         }
       }
       if (!v->name) {
-        fprintf(stderr, "eval_v: value does not exist `%.*s'\n", (int)(p - begin), begin);
+        fprintf(
+          stderr,
+          "eval_v: value does not exist `%.*s'\n",
+          (int)(p - begin),
+          begin
+        );
         goto end;
       }
       --p;
     }
     else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
-      if (vector_size(operators) == 0) {
-        vector_push(operators, ch);
-        prev = 1;
+      if (stk_size(&operators) == 0) {
+        stk_push_op(&operators, ch);
+        previous_token_was_operator = 1;
       }
-      else if (precedence(ch) > precedence(vector_back(operators))) {
-        vector_push(operators, ch);
-        prev = 1;
+      else if (precedence(ch) > precedence(stk_top(&operators).op)) {
+        stk_push_op(&operators, ch);
+        previous_token_was_operator = 1;
       }
       else {
-        eval_execute(numbers, operators);
+        eval_execute(&numbers, &operators);
         goto repeat;
       }
     }
@@ -105,17 +147,17 @@ eval_internal(const char *expr, const EvalValue *values) {
       // How to disambiguate something like "48/2(9+3)"
 #ifndef EVAL_DISAMBIG_ALT
       // "48/(2 * (9+3))"
-      if (!prev)
-        vector_push(operators, '*');
+      if (!previous_token_was_operator)
+        stk_push_op(&operators, '*');
 #else
       // "(48/2)(9+3)"
       if (!prev) {
-        if(vector__size(numbers) > 1 && vector__size(operators) > 0)
-          eval_execute(numbers, operators);
-        vector_push(operators, '*');
+        if(stk_size(&numbers) > 1 && stk_size(&operators) > 0)
+          eval_execute(&numbers, &operators);
+        stk_push_op(&operators, '*');
       }
 #endif
-      vector_push(numbers, eval_internal(p+1, values));
+      stk_push_num(&numbers, eval_internal(p+1, values));
       // Skip to end of this parenthesis
       int depth = 1;
       while (depth > 0) {
@@ -123,25 +165,27 @@ eval_internal(const char *expr, const EvalValue *values) {
         if (*p == '(') { ++depth; }
         else if (*p == ')') { --depth; }
       }
-      prev = 0;
+      previous_token_was_operator = 0;
     }
     else if (ch == ')') {
       break;
     }
     else {
-      fprintf(stderr, "eval: invalid character in expression -- %c (%d)\n",
-        ch, (int)(p - expr));
+      fprintf(
+        stderr,
+        "eval: invalid character in expression -- %c (at index %d)\n",
+        ch,
+        (int)(p - expr)
+      );
       goto end;
     }
   }
 
-  while (vector_size(operators) > 0)
-    eval_execute(numbers, operators);
-  ret = numbers[0];
+  while (stk_size(&operators) > 0)
+    eval_execute(&numbers, &operators);
+  ret = numbers.values[0].number;
 
 end:
-  vector_free(numbers);
-  vector_free(operators);
   return ret;
 }
 
@@ -210,15 +254,30 @@ eval_assign(const char *expr, const EvalValue *values) {
         }
       }
       if (!target->name) {
-        fprintf(stderr, "eval_assign: target value does not exist `%.*s'\n", (int)(p - name), name);
+        fprintf(
+          stderr,
+          "eval_assign: target value does not exist `%.*s'\n",
+          (int)(p - name),
+          name
+        );
         return 0;
       } else if (target->type == EVAL_CONST) {
-        fprintf(stderr, "eval_assign: target value is a constant `%.*s'\n", (int)(p - name), name);
+        fprintf(
+          stderr,
+          "eval_assign: target value is a constant `%.*s'\n",
+          (int)(p - name),
+          name
+        );
         return 0;
       }
     }
     else {
-      fprintf(stderr, "eval_assign: unexpected character in expression -- %c (%d)\n", *p, (int)(p - expr));
+      fprintf(
+        stderr,
+        "eval_assign: unexpected character in expression -- %c (%d)\n",
+        *p,
+        (int)(p - expr)
+      );
       return 0;
     }
   }
