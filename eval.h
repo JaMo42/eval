@@ -30,16 +30,21 @@ enum EvalValueType { EVAL_VAR, EVAL_CONST };
 
 typedef struct {
   const char *name;
-  union {
+  union eval__ValueUnion {
     double *variable;
     double constant;
-  };
+  } v;
   enum EvalValueType type;
 } EvalValue;
 
-#define EvalVar(n, v) { .name = n, .variable = v, .type = EVAL_VAR }
-#define EvalConst(n, c) { .name = n, .constant = c, .type = EVAL_CONST }
-#define EvalEnd { .name = NULL, .variable = NULL, .type = EVAL_VAR }
+#define EvalVar(n, v_) \
+    ((EvalValue) { .name = (n), .v = { .variable = (v_) }, .type = EVAL_VAR })
+
+#define EvalConst(n, c) \
+    ((EvalValue) { .name = (n), .v = { .constant = (c) }, .type = EVAL_CONST })
+
+#define EvalEnd \
+    ((EvalValue) { .name = NULL, .v.variable = NULL, .type = EVAL_VAR })
 
 /**
  * @brief Parses simple arithmetic expression.

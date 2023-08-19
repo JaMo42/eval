@@ -113,7 +113,7 @@ eval_internal(const char *expr, const EvalValue *values) {
       const EvalValue *v;
       for (v = values; v->name; ++v) {
         if (!strncmp(v->name, begin, p - begin)) {
-          stk_push_num(&numbers, v->type ? v->constant : *(v->variable));
+          stk_push_num(&numbers, v->type ? v->v.constant : *(v->v.variable));
           previous_token_was_operator = 0;
           break;
         }
@@ -281,7 +281,7 @@ eval_assign(const char *expr, const EvalValue *values) {
       return 0;
     }
   }
-  *target->variable = eval_internal(eq_pos + 1, values);
+  *target->v.variable = eval_internal(eq_pos + 1, values);
   return 1;
 }
 
